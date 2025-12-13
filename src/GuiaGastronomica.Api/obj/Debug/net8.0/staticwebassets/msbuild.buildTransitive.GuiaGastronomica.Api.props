@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\GuiaGastronomica.Api.props" />
+</Project>

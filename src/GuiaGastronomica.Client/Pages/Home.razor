@@ -1,0 +1,78 @@
+@page "/"
+@using MudBlazor
+
+<PageTitle>Guía Gastronómica Justa - Huelva</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true">
+        Bienvenido a la Guía Gastronómica Justa
+    </MudText>
+    <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
+        Rankings transparentes de bares y restaurantes en Huelva
+    </MudText>
+
+    <MudGrid Class="mt-8">
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Class="mud-card-hover">
+                <MudCardMedia Image="/images/restaurant-placeholder.jpg" Height="200" />
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Rankings Justos</MudText>
+                    <MudText Typo="Typo.body2">
+                        Algoritmo transparente basado en señales reales de calidad, sin sesgos publicitarios.
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/rankings">Ver Rankings</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Class="mud-card-hover">
+                <MudCardMedia Image="/images/chat-placeholder.jpg" Height="200" />
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Chatbot IA</MudText>
+                    <MudText Typo="Typo.body2">
+                        Interactúa con nuestra IA para dar feedback, verificar datos y aportar información.
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary">Iniciar Chat</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Class="mud-card-hover">
+                <MudCardMedia Image="/images/map-placeholder.jpg" Height="200" />
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Explora por Zonas</MudText>
+                    <MudText Typo="Typo.body2">
+                        Descubre locales por barrios y distritos de Huelva (próximamente).
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Disabled="true">Próximamente</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudDivider Class="my-8" />
+
+    <MudText Typo="Typo.h5" GutterBottom="true">¿Qué hace esta guía diferente?</MudText>
+    <MudList>
+        <MudListItem Icon="@Icons.Material.Filled.Check">
+            <MudText>Sin "pay-to-top": no aceptamos pagos para mejorar posiciones</MudText>
+        </MudListItem>
+        <MudListItem Icon="@Icons.Material.Filled.Check">
+            <MudText>Algoritmo transparente: puedes ver qué factores afectan el ranking</MudText>
+        </MudListItem>
+        <MudListItem Icon="@Icons.Material.Filled.Check">
+            <MudText>Reseñas verificadas: moderación activa contra spam y manipulación</MudText>
+        </MudListItem>
+        <MudListItem Icon="@Icons.Material.Filled.Check">
+            <MudText>Feedback comunitario: tu opinión cuenta y actualiza rankings en tiempo real</MudText>
+        </MudListItem>
+    </MudList>
+</MudContainer>
