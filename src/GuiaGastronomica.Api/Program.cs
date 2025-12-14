@@ -1,5 +1,8 @@
 using GuiaGastronomica.Api.Data;
+using GuiaGastronomica.Api.Services;
+using GuiaGastronomica.Api.Hubs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.SemanticKernel;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +25,14 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Configurar Semantic Kernel (no usado por ahora, llamamos directamente a Ollama)
+var kernelBuilder = Kernel.CreateBuilder();
+var kernel = kernelBuilder.Build();
+builder.Services.AddSingleton(kernel);
+
+// Registrar ChatService
+builder.Services.AddScoped<ChatService>();
+
 // Configurar SignalR para chatbot
 builder.Services.AddSignalR();
 
@@ -43,8 +54,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await context.Database.EnsureCreatedAsync();
-    await DataSeeder.SeedAsync(context);
+    context.Database.EnsureCreated();
+    DataSeeder.SeedAsync(context).Wait();
 }
 
 // Configure the HTTP request pipeline
@@ -54,13 +65,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Comentar UseHttpsRedirection para permitir conexiones HTTP de SignalR en desarrollo
+// app.UseHttpsRedirection();
 
 app.UseCors("AllowBlazorClient");
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Mapear Hub de SignalR con RequireCors
+app.MapHub<ChatHub>("/chathub").RequireCors("AllowBlazorClient");
 
 // Endpoint de ejemplo
 app.MapGet("/", () => "Guía Gastronómica Justa API - v1.0");
