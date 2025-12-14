@@ -105,7 +105,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configurar HttpClient para llamar a la API
 builder.Services.AddScoped(sp => new HttpClient { 
-    BaseAddress = new Uri("http://localhost:5000") 
+    BaseAddress = new Uri("http://localhost:5001") 
 });
 
 // Registrar servicios de MudBlazor

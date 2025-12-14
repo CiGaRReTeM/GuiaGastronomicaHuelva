@@ -31,7 +31,7 @@ Write-Host "[OK] Proyectos encontrados" -ForegroundColor Green
 Write-Host ""
 
 # Iniciar API en ventana separada
-Write-Host "Iniciando API Backend (http://localhost:5000)..." -ForegroundColor Cyan
+Write-Host "Iniciando API Backend (http://localhost:5001)..." -ForegroundColor Cyan
 $apiCommand = "cd `"$apiPath`"; dotnet run"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $apiCommand
 
@@ -60,8 +60,8 @@ Write-Host "============================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "URLs disponibles:" -ForegroundColor Yellow
 Write-Host "  - Cliente:       http://localhost:5002" -ForegroundColor White
-Write-Host "  - API:           http://localhost:5000" -ForegroundColor White
-Write-Host "  - Swagger:       http://localhost:5000/swagger" -ForegroundColor White
+Write-Host "  - API:           http://localhost:5001" -ForegroundColor White
+Write-Host "  - Swagger:       http://localhost:5001/swagger" -ForegroundColor White
 Write-Host ""
 Write-Host "Para detener la aplicacion:" -ForegroundColor Yellow
 Write-Host "  1. Cierra las ventanas de PowerShell de API y Cliente" -ForegroundColor White
