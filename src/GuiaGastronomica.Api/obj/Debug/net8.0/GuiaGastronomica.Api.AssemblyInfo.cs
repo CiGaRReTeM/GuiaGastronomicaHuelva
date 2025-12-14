@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GuiaGastronomica.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6c354d9905cb16f2a61fe7c11756c032e754c99c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e55cdc11af81402f302729f1ae93852ba25f3877")]
 [assembly: System.Reflection.AssemblyProductAttribute("GuiaGastronomica.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GuiaGastronomica.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "GuiaGastronomica.Client",
   "resources": {
-    "hash": "sha256-8DGk0xBS8LTIcvTQgTOLThlC+NOQXT/GG+rD7PdTgrU=",
+    "hash": "sha256-qYtBhT8HHr6nIAJ0TLUDxlD9mOjRz+8GyZzYZ8XQJSA=",
     "jsModuleNative": {
       "dotnet.native.8.0.22.ns9odisfyf.js": "sha256-vtotCeXt2UD6oc459laJT32vBgigZ+eLoUmdeFkvYDk="
     },
@@ -219,12 +219,12 @@
       "mscorlib.wasm": "sha256-K9gNrsN9UmPqLs6J/FrkiKpmkVGnHjjqUsc7YGvesCY=",
       "netstandard.wasm": "sha256-4emjlXLM9qW3t2tlII20SDylBgG4ueI0wy9nh5FMd8g=",
       "System.Private.CoreLib.wasm": "sha256-2DN4v7I/tabltDEPdIO8sDBB0tY8zOm+0CvHbMssXW4=",
-      "GuiaGastronomica.Shared.wasm": "sha256-dTesTgQO+lPK4teROU3XC/27BWHsA3KkWG+c4V098DM=",
-      "GuiaGastronomica.Client.wasm": "sha256-AAppRnd1AkL1+aED4xr+Np+esNwvj3aWeRhOiPDq1Ts="
+      "GuiaGastronomica.Shared.wasm": "sha256-znWq+QBBjiEjSBFtR+lD84rBIn/QPGHOfxlPqCWW/4c=",
+      "GuiaGastronomica.Client.wasm": "sha256-bkOAI/P9VnDVlCGw3RLgJL76tGNsIpAV8J72L7XDFyE="
     },
     "pdb": {
-      "GuiaGastronomica.Shared.pdb": "sha256-nQRz1Us9/9x2g+Q1loZ3KOh4zzJVv4X+wZWp7Cl3QxU=",
-      "GuiaGastronomica.Client.pdb": "sha256-GRS4FVqNMzZRnJRmmJsUNHWx7/+0MpyafLsD/HE7jjI="
+      "GuiaGastronomica.Shared.pdb": "sha256-AHxPJksB2d44pzaZVyJ9XWzUgv97dUJelwPnQ5U4c1U=",
+      "GuiaGastronomica.Client.pdb": "sha256-aOUJWFgWuTWGssSAwvl62XXHv7STNooHsjraUm07aGk="
     }
   },
   "cacheBootResources": true,

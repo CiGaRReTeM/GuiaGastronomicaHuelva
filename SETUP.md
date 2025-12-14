@@ -54,9 +54,9 @@ dotnet run
 ```
 
 La API estará disponible en:
-- HTTPS: https://localhost:7001
-- HTTP: http://localhost:5001
-- Swagger: https://localhost:7001/swagger
+- HTTP: http://localhost:5001 (principal)
+- HTTPS: https://localhost:7001 (configurado pero usando HTTP por defecto)
+- Swagger: http://localhost:5001/swagger
 
 ### 4. Ejecutar el cliente Blazor (frontend)
 
@@ -87,7 +87,7 @@ dotnet tool install --global dotnet-ef
 ```
 
 ### Error de CORS en el navegador
-- Verifica que la API esté ejecutándose en https://localhost:7001
+- Verifica que la API esté ejecutándose en http://localhost:5001
 - Verifica la configuración de CORS en `Program.cs` de la API
 
 ### Puerto ya en uso
@@ -127,7 +127,7 @@ GuiaGastronomicaHuelva/
 ## Documentación adicional
 
 - Ver `GUIDE.md` para arquitectura completa y roadmap
-- Swagger API: https://localhost:7001/swagger (cuando la API esté ejecutándose)
+- Swagger API: http://localhost:5001/swagger (cuando la API esté ejecutándose)
 
 ## Soporte
 
