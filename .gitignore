@@ -67,6 +67,12 @@ bld/
 *.pidb
 *.svclog
 *.scc
+*.cache
+*.AssemblyInfo.cs
+*.AssemblyInfoInputs.cache
+*.sourcelink.json
+*.csproj.AssemblyReference.cache
+*.csproj.CoreCompileInputs.cache
 
 # NuGet Packages
 *.nupkg
@@ -82,6 +88,15 @@ artifacts/
 # Blazor WebAssembly
 wwwroot/service-worker-assets.js
 **/*.blazor.boot.json
+**/wwwroot/_framework/*.wasm
+**/wwwroot/_framework/*.wasm.gz
+**/wwwroot/_framework/*.pdb.gz
+**/wwwroot/_framework/*.json
+**/wwwroot/_framework/*.json.gz
+**/obj/**/blazor.boot.json
+**/obj/**/compressed/*.gz
+**/obj/**/tmp-webcil/*.wasm
+**/obj/**/webcil/*.wasm
 
 # Database files (SQLite)
 *.db

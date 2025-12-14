@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\buildMultiTargeting\GuiaGastronomica.Client.props" />
-</Project>
