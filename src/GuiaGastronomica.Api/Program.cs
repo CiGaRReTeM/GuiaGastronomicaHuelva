@@ -39,6 +39,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Seed database con datos de prueba
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await context.Database.EnsureCreatedAsync();
+    await DataSeeder.SeedAsync(context);
+}
+
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
