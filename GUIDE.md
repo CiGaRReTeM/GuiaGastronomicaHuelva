@@ -389,4 +389,155 @@ Permitir a usuarios interactuar con un chatbot basado en IA para:
 
 ---
 
+## 14. Sistema de Feedback y Aprendizaje Continuo (Pendiente)
+
+### Descripción general
+Sistema de retroalimentación en tiempo real que permite al chatbot aprender de las interacciones de los usuarios y personalizar recomendaciones basándose en preferencias detectadas.
+
+### Componentes principales
+
+#### 14.1. Plugins de Semantic Kernel (Funciones Nativas)
+Funciones que el LLM puede llamar automáticamente durante la conversación:
+
+- **`buscar_restaurantes`**: Búsqueda dinámica según criterios (tipo cocina, zona, precio)
+- **`obtener_opiniones`**: Consulta reviews en tiempo real de un venue
+- **`registrar_feedback`**: Guarda thumbs up/down y ratings del usuario
+- **`registrar_preferencia`**: Almacena preferencias explícitas del usuario
+- **`obtener_perfil_usuario`**: Recupera preferencias aprendidas de sesiones anteriores
+- **`calcular_recomendacion_personalizada`**: Ordena venues según perfil del usuario
+
+#### 14.2. Base de datos de feedback
+Nuevas tablas en SQLite:
+
+```sql
+-- Feedback explícito de usuarios
+CREATE TABLE ChatFeedback (
+    Id INTEGER PRIMARY KEY,
+    SessionId TEXT NOT NULL,
+    UserMessage TEXT,
+    BotResponse TEXT,
+    VenueRecommended INTEGER,
+    Rating INTEGER,         -- 1-5 estrellas (opcional)
+    IsHelpful BOOLEAN,      -- thumbs up/down
+    Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (VenueRecommended) REFERENCES Venues(Id)
+);
+
+-- Preferencias aprendidas por usuario/sesión
+CREATE TABLE UserPreferences (
+    Id INTEGER PRIMARY KEY,
+    SessionId TEXT NOT NULL,
+    PreferenceType TEXT NOT NULL,  -- "cuisine", "zone", "price", "ambiance"
+    PreferenceValue TEXT NOT NULL,
+    Confidence REAL DEFAULT 0.5,   -- 0.0-1.0 (aumenta con interacciones)
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Índices para consultas rápidas
+CREATE INDEX idx_feedback_session ON ChatFeedback(SessionId);
+CREATE INDEX idx_preferences_session ON UserPreferences(SessionId);
+CREATE INDEX idx_feedback_venue ON ChatFeedback(VenueRecommended);
+```
+
+#### 14.3. Servicios backend
+Nuevos servicios en `GuiaGastronomica.Api/Services/`:
+
+- **`FeedbackService.cs`**: CRUD de feedback y estadísticas
+- **`PreferenceAnalyzer.cs`**: Detecta patrones (cocina favorita, zona preferida, rango de precio)
+- **`RecommendationEngine.cs`**: Ordena venues según perfil del usuario
+- **`VectorMemoryService.cs`** (avanzado): Embeddings de preferencias con Qdrant/pgvector
+
+#### 14.4. Frontend (Blazor)
+Componente `FeedbackButtons.razor`:
+
+```razor
+@if (message.ContainsVenueRecommendation)
+{
+    <div class="feedback-buttons">
+        <MudIconButton Icon="@Icons.Material.Filled.ThumbUp" 
+                       Color="Color.Success"
+                       OnClick="@(() => SendFeedback(message.VenueId, true))" />
+        <MudIconButton Icon="@Icons.Material.Filled.ThumbDown" 
+                       Color="Color.Error"
+                       OnClick="@(() => SendFeedback(message.VenueId, false))" />
+        <MudRating @bind-SelectedValue="rating" 
+                   OnClick="@(() => SendRating(message.VenueId, rating))" />
+    </div>
+}
+```
+
+#### 14.5. Integración con ChatService
+Modificar `BuildVenuesContext()` para incluir preferencias:
+
+```csharp
+public async Task<string> ProcessMessageAsync(string userMessage, string sessionId)
+{
+    // 1. Analizar preferencias del usuario
+    var userPrefs = await _preferenceAnalyzer.AnalyzeAsync(sessionId);
+    
+    // 2. Obtener venues personalizados
+    var venues = await _recommendationEngine.GetRecommendedAsync(userPrefs);
+    
+    // 3. Construir contexto enriquecido
+    var contextMessage = $@"
+Contexto: Eres un asistente experto en gastronomía de Huelva.
+
+PREFERENCIAS APRENDIDAS DEL USUARIO:
+{(userPrefs.FavoriteCuisine != null ? $"- Prefiere cocina: {userPrefs.FavoriteCuisine}" : "")}
+{(userPrefs.FavoriteZone != null ? $"- Zona preferida: {userPrefs.FavoriteZone}" : "")}
+{(userPrefs.PreferredPriceRange.HasValue ? $"- Rango de precio: {userPrefs.PreferredPriceRange}" : "")}
+
+RESTAURANTES DISPONIBLES (ordenados por relevancia):
+{BuildVenuesContext(venues)}";
+    
+    // ... resto del código
+}
+```
+
+### Roadmap de implementación
+
+#### Fase 1: Feedback Básico (1-2 días) ✅ Prioritario
+1. Crear modelos `ChatFeedback` y `UserPreferences`
+2. Migración de base de datos (nuevas tablas)
+3. Implementar `FeedbackService.cs`
+4. Plugin SK `registrar_feedback`
+5. Botones thumbs up/down en frontend
+6. Dashboard básico de métricas de feedback
+
+#### Fase 2: Detección de Preferencias (3-4 días)
+1. Implementar `PreferenceAnalyzer.cs`
+2. Plugin SK `obtener_perfil_usuario`
+3. Modificar `ChatService` para incluir preferencias en contexto
+4. Testing con múltiples sesiones simuladas
+
+#### Fase 3: Recomendaciones Personalizadas (5-7 días)
+1. Implementar `RecommendationEngine.cs` con algoritmo de scoring
+2. Plugin SK `calcular_recomendacion_personalizada`
+3. A/B testing de prompts personalizados vs genéricos
+4. Métricas de efectividad (% thumbs up antes/después)
+
+#### Fase 4: RAG + Vector Memory (avanzado, 2-3 semanas)
+1. Integrar Qdrant o pgvector para embeddings
+2. Implementar `VectorMemoryService.cs`
+3. Guardar interacciones como embeddings
+4. Búsqueda semántica de preferencias similares
+5. Memoria a largo plazo entre sesiones
+
+### Beneficios esperados
+- ✅ Recomendaciones personalizadas por usuario
+- ✅ Mejora continua del chatbot con datos reales
+- ✅ Detección automática de patterns (usuarios de tapas, alta cocina, etc.)
+- ✅ Métricas de calidad de recomendaciones
+- ✅ Base para sistema de recomendación híbrido (LLM + ML tradicional)
+
+### Dependencias
+- Semantic Kernel 1.30.0+ (plugins nativos)
+- SQLite (tablas de feedback)
+- Opcional: Qdrant/pgvector para embeddings (Fase 4)
+
+### Estado
+⏳ **Pendiente de implementación** — Documentado el 2025-12-15
+
+---
+
 **Fin del documento v1.0** ✅
