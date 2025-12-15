@@ -25,8 +25,16 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configurar Semantic Kernel (no usado por ahora, llamamos directamente a Ollama)
+// Configurar Semantic Kernel con Ollama usando el conector oficial
 var kernelBuilder = Kernel.CreateBuilder();
+
+#pragma warning disable SKEXP0070
+kernelBuilder.AddOllamaChatCompletion(
+    modelId: "llama3.2:3b",
+    endpoint: new Uri("http://localhost:11434")
+);
+#pragma warning restore SKEXP0070
+
 var kernel = kernelBuilder.Build();
 builder.Services.AddSingleton(kernel);
 

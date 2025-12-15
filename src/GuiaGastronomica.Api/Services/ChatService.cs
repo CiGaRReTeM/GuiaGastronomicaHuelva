@@ -34,21 +34,38 @@ Cuando recomiendes un lugar, menciona su nombre, zona y puntuación si está dis
         {
             _logger.LogInformation("Processing chat message: {Message}", userMessage);
 
-            // Agregar mensaje del usuario al historial
-            _chatHistory.AddUserMessage(userMessage);
-
             // Buscar contexto relevante en la base de datos
             var venuesContext = await GetRelevantVenuesContext(userMessage);
+            _logger.LogInformation("Found {Count} venues in context", venuesContext.Count);
 
-            // Llamar directamente a Ollama API
-            var response = await CallOllamaAsync(userMessage, venuesContext.Cast<object>().ToList());
+            // Construir mensaje con contexto de venues
+            var contextMessage = BuildVenuesContext(venuesContext);
+            
+            // Agregar mensaje del usuario con contexto incorporado
+            var enrichedMessage = $"{contextMessage}\n\nPregunta del usuario: {userMessage}";
+            _chatHistory.AddUserMessage(enrichedMessage);
+
+            _logger.LogInformation("Calling Ollama via Semantic Kernel...");
+
+            // Obtener servicio de chat completion de Semantic Kernel
+            var chatService = _kernel.GetRequiredService<IChatCompletionService>();
+
+            // Generar respuesta con Semantic Kernel
+            var response = await chatService.GetChatMessageContentAsync(
+                _chatHistory,
+                kernel: _kernel
+            );
+
+            _logger.LogInformation("Received response from Ollama, length: {Length}", response.Content?.Length ?? 0);
+
+            var responseText = response.Content ?? "Lo siento, no pude generar una respuesta.";
 
             // Agregar respuesta del asistente al historial
-            _chatHistory.AddAssistantMessage(response);
+            _chatHistory.AddAssistantMessage(responseText);
 
             return new ChatResponseDto
             {
-                Response = response,
+                Response = responseText,
                 ExtractedIntent = ExtractIntent(userMessage),
                 ExtractedEntities = new Dictionary<string, object>
                 {
@@ -131,62 +148,35 @@ Cuando recomiendes un lugar, menciona su nombre, zona y puntuación si está dis
 Tu objetivo es ayudar a los usuarios a encontrar los mejores locales según sus preferencias.");
     }
 
-    private async Task<string> CallOllamaAsync(string userMessage, List<object> venuesContext)
+    private string BuildVenuesContext(List<VenueDto> venuesContext)
     {
-        using var httpClient = new HttpClient();
+        var contextBuilder = new System.Text.StringBuilder();
         
-        // Construir el prompt con contexto
-        var systemPrompt = @"Eres un asistente experto en restaurantes y gastronomía de Huelva, España.
-
-IMPORTANTE: Solo puedes recomendar locales que existan en la base de datos proporcionada.
-NO inventes ni menciones lugares que no estén en la lista.
-Si no hay locales relevantes, indícalo claramente.
-
-Responde de forma amigable, clara y concisa en español.";
-
-        var contextInfo = "";
-        if (venuesContext.Any())
+        contextBuilder.AppendLine("Contexto: Eres un asistente experto en gastronomía de Huelva, España.");
+        
+        if (!venuesContext.Any())
         {
-            contextInfo = "\n\n=== LOCALES DISPONIBLES EN HUELVA ===\n";
-            foreach (var venue in venuesContext.Take(10))
+            contextBuilder.AppendLine("Actualmente no hay locales en la base de datos que coincidan con la búsqueda.");
+            return contextBuilder.ToString();
+        }
+
+        contextBuilder.AppendLine($"Tienes información sobre {venuesContext.Count} locales:");
+        contextBuilder.AppendLine();
+
+        foreach (var venue in venuesContext.Take(10))
+        {
+            contextBuilder.AppendLine($"• {venue.Name}");
+            contextBuilder.AppendLine($"  Tipo: {venue.Category}");
+            contextBuilder.AppendLine($"  Zona: {venue.Zone}");
+            contextBuilder.AppendLine($"  Valoración: {venue.Score}/5 estrellas");
+            if (!string.IsNullOrEmpty(venue.Description))
             {
-                var v = venue as VenueDto;
-                if (v != null)
-                {
-                    contextInfo += $"- {v.Name} ({v.Category}) en {v.Zone}. Puntuación: {v.Score}/5\n";
-                    if (!string.IsNullOrEmpty(v.Description))
-                        contextInfo += $"  {v.Description}\n";
-                }
+                contextBuilder.AppendLine($"  Info: {venue.Description}");
             }
-            contextInfo += "=================================\n";
-        }
-        else
-        {
-            contextInfo = "\n\n=== NO HAY LOCALES EN LA BASE DE DATOS AÚN ===\n";
+            contextBuilder.AppendLine();
         }
 
-        var fullPrompt = $"{systemPrompt}{contextInfo}\nUsuario: {userMessage}\nAsistente:";
-
-        var requestBody = new
-        {
-            model = "llama3.2:3b",
-            prompt = fullPrompt,
-            stream = false
-        };
-
-        var response = await httpClient.PostAsJsonAsync(
-            "http://localhost:11434/api/generate", 
-            requestBody
-        );
-
-        response.EnsureSuccessStatusCode();
-
-        var result = await response.Content.ReadFromJsonAsync<OllamaResponse>();
-        return result?.response ?? "Lo siento, no pude generar una respuesta.";
-    }
-
-    private class OllamaResponse
-    {
-        public string? response { get; set; }
+        contextBuilder.AppendLine("Importante: Solo recomienda estos locales. Responde de forma amigable en español.");
+        return contextBuilder.ToString();
     }
 }
