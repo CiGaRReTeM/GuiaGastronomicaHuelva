@@ -11,10 +11,14 @@ Thumbs.db
 *~
 .vscode-test/
 
-## Environment Variables
+## Environment Variables & Config files with secrets
 .env
 .env.local
 .env.production
+appsettings.json
+appsettings.*.json
+!appsettings.Development.json.example
+!appsettings.json.example
 
 ## .NET / C# / Blazor
 # Build results
