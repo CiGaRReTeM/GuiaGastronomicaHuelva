@@ -45,6 +45,9 @@ builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<GooglePlacesService>();
 builder.Services.AddHttpClient<GooglePlacesService>();
 
+// Registrar ZoneAssignmentService
+builder.Services.AddScoped<ZoneAssignmentService>();
+
 // Configurar SignalR para chatbot
 builder.Services.AddSignalR();
 

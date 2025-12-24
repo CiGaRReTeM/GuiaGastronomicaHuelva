@@ -1,4 +1,5 @@
 using GuiaGastronomica.Api.Data;
+using GuiaGastronomica.Api.Services;
 using GuiaGastronomica.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -98,6 +99,48 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError($"Error al inicializar zonas: {ex.Message}");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("assign-venues-to-zones")]
+    public async Task<ActionResult> AssignVenuesToZones([FromServices] ZoneAssignmentService zoneService)
+    {
+        try
+        {
+            _logger.LogInformation("🔄 Iniciando asignación de venues a zonas...");
+
+            // Obtener todos los venues
+            var venues = await _context.Venues.ToListAsync();
+            _logger.LogInformation($"Total de venues a procesar: {venues.Count}");
+
+            // Asignar zonas usando el servicio
+            int assignedCount = zoneService.AssignZonesToVenues(venues);
+            
+            // Actualizar en BD
+            foreach (var venue in venues)
+            {
+                var assignedZone = zoneService.AssignZone(venue);
+                venue.Zone = assignedZone;
+            }
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"✅ Asignación completada: {assignedCount} venues asignados a zonas específicas");
+
+            // Obtener estadísticas
+            var distribution = zoneService.GetZoneDistribution(venues);
+
+            return Ok(new 
+            { 
+                message = "Asignación de zonas completada",
+                totalProcessed = venues.Count,
+                assigned = assignedCount,
+                distribution = distribution
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error en asignación de zonas: {ex.Message}");
             return BadRequest(new { error = ex.Message });
         }
     }
