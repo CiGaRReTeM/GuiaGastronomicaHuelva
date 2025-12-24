@@ -1,0 +1,211 @@
+@page "/review/{VenueId:int}"
+@using GuiaGastronomica.Shared.DTOs
+@using GuiaGastronomica.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div class="review-form-container">
+    <MudCard>
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h6">Deja tu reseña</MudText>
+                <MudText Typo="Typo.caption">Ayuda a otros a descubrir este lugar</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+
+        <MudCardContent>
+            <MudForm @ref="form" @bind-IsValid="isFormValid">
+                <!-- Rating -->
+                <MudItem xs="12" sm="6">
+                    <MudText Class="mb-3">Puntuación (1-5 estrellas)</MudText>
+                    <MudRating @bind-SelectedValue="rating" MaxValue="5" Size="Size.Large" Color="Color.Warning" />
+                </MudItem>
+
+                <!-- Comentario -->
+                <MudItem xs="12" Class="mt-4">
+                    <MudTextField
+                        @bind-Value="content"
+                        Label="Tu comentario"
+                        Variant="Variant.Outlined"
+                        Multiline="true"
+                        Lines="5"
+                        Counter="500"
+                        MaxLength="500"
+                        FullWidth="true"
+                        Required="true"
+                        RequiredError="El comentario es obligatorio"
+                        Placeholder="Comparte tu experiencia... ¿Qué te pareció? ¿Qué recomendarías?"
+                        Validation="@(new Func<string, IEnumerable<string>>(ValidateComment))"
+                    />
+                </MudItem>
+
+                <!-- Sentiment Preview -->
+                @if (!string.IsNullOrEmpty(content))
+                {
+                    <MudItem xs="12" Class="mt-3">
+                        <MudAlert Severity="GetSentimentSeverity(DetectSentiment())" Variant="Variant.Outlined" Dense="true">
+                            Sentimiento detectado: <strong>@DetectSentiment()</strong>
+                        </MudAlert>
+                    </MudItem>
+                }
+
+                <!-- Error Message -->
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <MudItem xs="12" Class="mt-3">
+                        <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Dense="true">
+                            @errorMessage
+                        </MudAlert>
+                    </MudItem>
+                }
+
+                <!-- Success Message -->
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <MudItem xs="12" Class="mt-3">
+                        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Dense="true">
+                            @successMessage
+                        </MudAlert>
+                    </MudItem>
+                }
+
+                <!-- Buttons -->
+                <MudItem xs="12" Class="d-flex justify-content-end gap-2 mt-4">
+                    <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="Cancel">
+                        Cancelar
+                    </MudButton>
+                    <MudButton 
+                        Variant="Variant.Filled" 
+                        Color="Color.Primary" 
+                        OnClick="SubmitReview"
+                        Disabled="!isFormValid || isSubmitting"
+                    >
+                        @if (isSubmitting)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">Enviando...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Enviar Reseña</MudText>
+                        }
+                    </MudButton>
+                </MudItem>
+            </MudForm>
+        </MudCardContent>
+    </MudCard>
+</div>
+
+<style>
+    .review-form-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 1rem;
+    }
+
+    .gap-2 {
+        gap: 0.5rem;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int VenueId { get; set; }
+
+    private MudForm form = null!;
+    private bool isFormValid = false;
+    private bool isSubmitting = false;
+
+    private int rating = 3;
+    private string content = string.Empty;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    private IEnumerable<string> ValidateComment(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            yield return "El comentario es obligatorio";
+
+        if (value?.Length < 10)
+            yield return "El comentario debe tener al menos 10 caracteres";
+    }
+
+    private string DetectSentiment()
+    {
+        var lowerText = content.ToLower();
+
+        var positiveWords = new[] { "excelente", "muy bueno", "delicioso", "recomiendo", "perfecto", "increíble", "fantástico", "maravilloso", "buenísimo" };
+        var negativeWords = new[] { "malo", "horrible", "desastre", "no recomiendo", "pésimo", "terrible", "decepcionante", "mediocre" };
+
+        var positiveCount = positiveWords.Count(word => lowerText.Contains(word));
+        var negativeCount = negativeWords.Count(word => lowerText.Contains(word));
+
+        if (positiveCount > negativeCount)
+            return "Positivo";
+        else if (negativeCount > positiveCount)
+            return "Negativo";
+        else
+            return "Neutral";
+    }
+
+    private Severity GetSentimentSeverity(string sentiment)
+    {
+        return sentiment switch
+        {
+            "Positivo" => Severity.Success,
+            "Negativo" => Severity.Error,
+            _ => Severity.Info
+        };
+    }
+
+    private async Task SubmitReview()
+    {
+        if (form == null || !isFormValid) return;
+
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        isSubmitting = true;
+
+        try
+        {
+            var request = new
+            {
+                VenueId = VenueId,
+                Content = content,
+                Rating = rating
+            };
+
+            var response = await Http.PostAsJsonAsync("/api/reviews", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = "✅ ¡Gracias! Tu reseña ha sido enviada y será validada pronto.";
+                content = string.Empty;
+                rating = 3;
+                await form.ResetAsync();
+                
+                // Redirigir después de 2 segundos
+                await Task.Delay(2000);
+                Nav.NavigateTo($"/venue/{VenueId}");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                errorMessage = "Error al enviar la reseña. Intenta de nuevo.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo($"/venue/{VenueId}");
+    }
+}

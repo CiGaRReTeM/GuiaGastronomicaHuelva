@@ -8,6 +8,7 @@ public class VenueDto
     public string? Description { get; set; }
     public string? Category { get; set; }
     public string? Zone { get; set; }
+    public string? Website { get; set; }
     public decimal? PriceRange { get; set; }
     public double Score { get; set; }
     public double Latitude { get; set; }
@@ -17,9 +18,27 @@ public class VenueDto
 
 public class ReviewDto
 {
+    public int Id { get; set; }
     public required string Content { get; set; }
     public int Rating { get; set; }
     public int VenueId { get; set; }
+    public string? Sentiment { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public bool IsVerified { get; set; }
+}
+
+public class ReviewStatsDto
+{
+    public int TotalReviews { get; set; }
+    public double AverageRating { get; set; }
+    public SentimentDistributionDto SentimentDistribution { get; set; } = new();
+}
+
+public class SentimentDistributionDto
+{
+    public int Positive { get; set; }
+    public int Neutral { get; set; }
+    public int Negative { get; set; }
 }
 
 public class RankingDto

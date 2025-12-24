@@ -1,6 +1,7 @@
 @page "/venues"
 @using GuiaGastronomica.Shared.DTOs
 @inject HttpClient Http
+@inject NavigationManager Nav
 
 <PageTitle>Locales - Guía Gastronómica Justa</PageTitle>
 
@@ -47,7 +48,9 @@
                             <MudChip Size="Size.Small">@venue.Category</MudChip>
                         </MudCardContent>
                         <MudCardActions>
-                            <MudButton Variant="Variant.Text" Color="Color.Primary">Ver Detalles</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => GoToVenueDetail(venue.Id))">
+                                Ver Detalles
+                            </MudButton>
                         </MudCardActions>
                     </MudCard>
                 </MudItem>
@@ -89,5 +92,10 @@
         {
             loading = false;
         }
+    }
+
+    private void GoToVenueDetail(int venueId)
+    {
+        Nav.NavigateTo($"/venue/{venueId}");
     }
 }

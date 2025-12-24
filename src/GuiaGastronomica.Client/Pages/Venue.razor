@@ -1,0 +1,242 @@
+@page "/venue/{VenueId:int}"
+@using GuiaGastronomica.Shared.DTOs
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    @if (loading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        <MudText>Cargando detalles...</MudText>
+    }
+    else if (venue == null)
+    {
+        <MudAlert Severity="Severity.Error">No se encontró el local</MudAlert>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Nav.NavigateTo("/venues"))">
+            Volver a Locales
+        </MudButton>
+    }
+    else
+    {
+        <MudGrid>
+            <!-- Detalles del venue -->
+            <MudItem xs="12" md="8">
+                <MudCard Class="mb-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h4">@venue.Name</MudText>
+                            <MudText Typo="Typo.subtitle1">@venue.Category</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Spacing="2">
+                            <div>
+                                <MudText Typo="Typo.subtitle2" Color="Color.Primary"><strong>Ubicación</strong></MudText>
+                                <MudText>@venue.Address</MudText>
+                            </div>
+
+                            <div>
+                                <MudText Typo="Typo.subtitle2" Color="Color.Primary"><strong>Zona</strong></MudText>
+                                <MudChip Size="Size.Small" Color="Color.Secondary">@venue.Zone</MudChip>
+                            </div>
+
+                            <div>
+                                <MudText Typo="Typo.subtitle2" Color="Color.Primary"><strong>Puntuación Google</strong></MudText>
+                                <MudRating ReadOnly="true" SelectedValue="(int)Math.Round(venue.Score)" MaxValue="5" />
+                                <MudText>@venue.Score.ToString("F1")/5.0</MudText>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(venue.Description))
+                            {
+                                <div>
+                                    <MudText Typo="Typo.subtitle2" Color="Color.Primary"><strong>Descripción</strong></MudText>
+                                    <MudText>@venue.Description</MudText>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(venue.Website))
+                            {
+                                <div>
+                                    <MudText Typo="Typo.subtitle2" Color="Color.Primary"><strong>Sitio Web</strong></MudText>
+                                    <MudLink Href="@venue.Website" Target="_blank">Visitar sitio web</MudLink>
+                                </div>
+                            }
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Reseñas -->
+                <MudCard Class="mb-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Reseñas de Usuarios (@reviews.Count)</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @if (reviews.Count == 0)
+                        {
+                            <MudAlert Severity="Severity.Info">Aún no hay reseñas. ¡Sé el primero en comentar!</MudAlert>
+                        }
+                        else
+                        {
+                            <MudStack Spacing="2">
+                                @foreach (var review in reviews)
+                                {
+                                    <MudCard Variant="Variant.Outlined">
+                                        <MudCardContent>
+                                            <MudStack Spacing="1">
+                                                <div class="d-flex justify-space-between align-center">
+                                                    <MudRating ReadOnly="true" SelectedValue="review.Rating" MaxValue="5" Size="Size.Small" />
+                                                    <MudText Typo="Typo.caption" Color="Color.Tertiary">
+                                                        @review.CreatedAt.ToString("dd/MM/yyyy")
+                                                    </MudText>
+                                                </div>
+                                                <MudText>@review.Content</MudText>
+                                                @if (!string.IsNullOrEmpty(review.Sentiment))
+                                                {
+                                                    <MudChip Size="Size.Small" Color="@GetSentimentColor(review.Sentiment)" Variant="Variant.Text">
+                                                        @GetSentimentLabel(review.Sentiment)
+                                                    </MudChip>
+                                                }
+                                                @if (!review.IsVerified)
+                                                {
+                                                    <MudChip Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">
+                                                        Pendiente de verificación
+                                                    </MudChip>
+                                                }
+                                            </MudStack>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                            </MudStack>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <!-- Barra lateral -->
+            <MudItem xs="12" md="4">
+                <MudCard Class="mb-4" style="position: sticky; top: 20px;">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Acciones</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Spacing="2">
+                            <MudButton 
+                                Variant="Variant.Filled" 
+                                Color="Color.Primary" 
+                                FullWidth="true"
+                                OnClick="@(() => Nav.NavigateTo($"/review/{VenueId}"))">
+                                ⭐ Deja tu Reseña
+                            </MudButton>
+                            <MudButton 
+                                Variant="Variant.Outlined" 
+                                Color="Color.Primary" 
+                                FullWidth="true"
+                                OnClick="@(() => Nav.NavigateTo("/venues"))">
+                                ← Volver a Listado
+                            </MudButton>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+
+                @if (stats != null)
+                {
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Estadísticas</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="2">
+                                <div>
+                                    <MudText Typo="Typo.caption" Color="Color.Tertiary">Total de reseñas verificadas</MudText>
+                                    <MudText Typo="Typo.h5">@stats.TotalReviews</MudText>
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.caption" Color="Color.Tertiary">Puntuación media (usuarios)</MudText>
+                                    <MudText Typo="Typo.h5">@stats.AverageRating.ToString("F1")/5.0</MudText>
+                                </div>
+                                <div>
+                                    <MudText Typo="Typo.caption" Color="Color.Tertiary">Sentimiento</MudText>
+                                    @if ((stats.SentimentDistribution.Positive + stats.SentimentDistribution.Negative + stats.SentimentDistribution.Neutral) > 0)
+                                    {
+                                        var total = stats.SentimentDistribution.Positive + stats.SentimentDistribution.Negative + stats.SentimentDistribution.Neutral;
+                                        <MudProgressLinear Value="@((stats.SentimentDistribution.Positive * 100) / total)" Color="Color.Success" Rounded="true" Class="mb-1" />
+                                        <MudText Typo="Typo.caption">Positivas: @stats.SentimentDistribution.Positive</MudText>
+                                        <MudProgressLinear Value="@((stats.SentimentDistribution.Neutral * 100) / total)" Color="Color.Info" Rounded="true" Class="mb-1" />
+                                        <MudText Typo="Typo.caption">Neutrales: @stats.SentimentDistribution.Neutral</MudText>
+                                        <MudProgressLinear Value="@((stats.SentimentDistribution.Negative * 100) / total)" Color="Color.Error" Rounded="true" />
+                                        <MudText Typo="Typo.caption">Negativas: @stats.SentimentDistribution.Negative</MudText>
+                                    }
+                                </div>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                }
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int VenueId { get; set; }
+
+    private VenueDto? venue;
+    private List<ReviewDto> reviews = new();
+    private ReviewStatsDto? stats;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVenueDetails();
+    }
+
+    private async Task LoadVenueDetails()
+    {
+        loading = true;
+        try
+        {
+            // Cargar detalles del venue
+            venue = await Http.GetFromJsonAsync<VenueDto>($"/api/venues/{VenueId}");
+
+            // Cargar reseñas
+            reviews = await Http.GetFromJsonAsync<List<ReviewDto>>($"/api/reviews/venue/{VenueId}") ?? new();
+
+            // Cargar estadísticas
+            stats = await Http.GetFromJsonAsync<ReviewStatsDto>($"/api/reviews/stats/venue/{VenueId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading venue details: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private Color GetSentimentColor(string sentiment)
+    {
+        return sentiment.ToLower() switch
+        {
+            "positive" => Color.Success,
+            "negative" => Color.Error,
+            _ => Color.Info
+        };
+    }
+
+    private string GetSentimentLabel(string sentiment)
+    {
+        return sentiment.ToLower() switch
+        {
+            "positive" => "😊 Positiva",
+            "negative" => "😞 Negativa",
+            _ => "😐 Neutral"
+        };
+    }
+}
