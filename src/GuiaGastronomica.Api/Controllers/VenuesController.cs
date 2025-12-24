@@ -1,4 +1,5 @@
 using GuiaGastronomica.Api.Data;
+using GuiaGastronomica.Api.Services;
 using GuiaGastronomica.Shared.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,11 +12,13 @@ public class VenuesController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly ILogger<VenuesController> _logger;
+    private readonly GooglePlacesService _googlePlacesService;
 
-    public VenuesController(AppDbContext context, ILogger<VenuesController> logger)
+    public VenuesController(AppDbContext context, ILogger<VenuesController> logger, GooglePlacesService googlePlacesService)
     {
         _context = context;
         _logger = logger;
+        _googlePlacesService = googlePlacesService;
     }
 
     [HttpGet]
@@ -84,5 +87,64 @@ public class VenuesController : ControllerBase
             return NotFound();
 
         return Ok(venue);
+    }
+
+    [HttpPost("import-from-google-places")]
+    public async Task<ActionResult> ImportFromGooglePlaces()
+    {
+        try
+        {
+            _logger.LogInformation("Iniciando importación de Google Places...");
+
+            // Obtener venues de Google Places
+            var venues = await _googlePlacesService.SearchHuelvaVenuesAsync();
+            _logger.LogInformation($"Se encontraron {venues.Count} locales en Google Places");
+
+            if (venues.Count == 0)
+                return Ok(new { message = "No se encontraron locales en Google Places" });
+
+            // Deduplicación: verificar si ya existen
+            var newVenues = new List<GuiaGastronomica.Shared.Models.Venue>();
+            var duplicateCount = 0;
+
+            foreach (var venue in venues)
+            {
+                // Buscar por nombre y zona (para evitar duplicados)
+                var existing = await _context.Venues
+                    .FirstOrDefaultAsync(v => v.Name.ToLower() == venue.Name.ToLower() && v.Zone == venue.Zone);
+
+                if (existing == null)
+                {
+                    newVenues.Add(venue);
+                }
+                else
+                {
+                    duplicateCount++;
+                }
+            }
+
+            _logger.LogInformation($"Locales nuevos: {newVenues.Count}, Duplicados: {duplicateCount}");
+
+            // Agregar a base de datos
+            if (newVenues.Count > 0)
+            {
+                await _context.Venues.AddRangeAsync(newVenues);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Importación completada. {newVenues.Count} locales agregados.");
+            }
+
+            return Ok(new 
+            { 
+                message = "Importación completada", 
+                totalFound = venues.Count,
+                newAdded = newVenues.Count,
+                duplicates = duplicateCount
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error en importación: {ex.Message}");
+            return BadRequest(new { error = ex.Message });
+        }
     }
 }

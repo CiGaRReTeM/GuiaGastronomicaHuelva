@@ -41,6 +41,10 @@ builder.Services.AddSingleton(kernel);
 // Registrar ChatService
 builder.Services.AddScoped<ChatService>();
 
+// Registrar GooglePlacesService
+builder.Services.AddScoped<GooglePlacesService>();
+builder.Services.AddHttpClient<GooglePlacesService>();
+
 // Configurar SignalR para chatbot
 builder.Services.AddSignalR();
 
@@ -62,7 +66,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.EnsureCreated();
+    context.Database.Migrate();
     DataSeeder.SeedAsync(context).Wait();
 }
 
