@@ -19,7 +19,7 @@ public class GooglePlacesService
     {
         _httpClient = httpClient;
         _logger = logger;
-        _apiKey = configuration["GooglePlaces:ApiKey"] ?? throw new InvalidOperationException("GooglePlaces:ApiKey not configured");
+        _apiKey = configuration["GooglePlaces:ApiKey"];
     }
 
     /// <summary>
@@ -27,6 +27,9 @@ public class GooglePlacesService
     /// </summary>
     public async Task<List<Venue>> SearchHuelvaVenuesAsync()
     {
+        if (string.IsNullOrEmpty(_apiKey))
+            throw new InvalidOperationException("GooglePlaces:ApiKey no está configurada. Configura la variable de entorno GooglePlaces__ApiKey o el appsettings.json");
+
         var venues = new List<Venue>();
 
         try

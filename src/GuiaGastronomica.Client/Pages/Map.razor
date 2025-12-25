@@ -1,0 +1,303 @@
+@page "/mapa"
+@using GuiaGastronomica.Shared.DTOs
+@using System.Collections.Generic
+@using System.Text.Json
+@inject HttpClient Http
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<PageTitle>Mapa Interactivo - Guía Gastronómica Justa</PageTitle>
+
+<div class="map-container">
+    <MudGrid>
+        <MudItem xs="12" sm="3">
+            <MudPaper Elevation="2" Class="pa-4 filter-panel">
+                <MudText Typo="Typo.h6" GutterBottom="true">Filtros</MudText>
+                
+                <MudSelect T="string" @bind-Value="selectedZone" Label="Filtrar por Zona" 
+                           Dense="true" Class="mb-4" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@((string)null)">Todas las zonas</MudSelectItem>
+                    @if (zones != null)
+                    {
+                        @foreach (var zone in zones)
+                        {
+                            <MudSelectItem Value="zone">@zone</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                           OnClick="ApplyFilters" FullWidth="true" Class="mb-4">
+                    Aplicar Filtros
+                </MudButton>
+
+                <MudDivider Class="my-4" />
+
+                <MudText Typo="Typo.body2">
+                    <strong>Venues encontrados:</strong> @(filteredVenues?.Count ?? 0)
+                </MudText>
+
+                @if (filteredVenues != null && filteredVenues.Count > 0)
+                {
+                    <MudList Dense="true" Class="venue-list mt-4">
+                        @foreach (var venue in filteredVenues.Take(10))
+                        {
+                            <MudListItem @onclick="() => SelectVenue(venue)" Class="venue-item cursor-pointer">
+                                <div>
+                                    <MudText Typo="Typo.body2"><strong>@venue.Name</strong></MudText>
+                                    <MudText Typo="Typo.caption">@venue.Zone</MudText>
+                                    <MudText Typo="Typo.caption">⭐ @venue.Score.ToString("F1")</MudText>
+                                </div>
+                            </MudListItem>
+                        }
+                        @if (filteredVenues.Count > 10)
+                        {
+                            <MudText Typo="Typo.caption" Class="ml-4 mt-2">
+                                +@(filteredVenues.Count - 10) más
+                            </MudText>
+                        }
+                    </MudList>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="9">
+            <MudPaper Elevation="2" Class="map-wrapper">
+                <div @ref="mapElement" id="map" class="leaflet-map"></div>
+            </MudPaper>
+
+            @if (selectedVenue != null)
+            {
+                <MudPaper Elevation="2" Class="pa-4 mt-4 selected-venue-panel">
+                    <MudGrid>
+                        <MudItem xs="12" sm="8">
+                            <MudText Typo="Typo.h5" GutterBottom="true">@selectedVenue.Name</MudText>
+                            <MudText Typo="Typo.body2">
+                                <strong>Zona:</strong> @selectedVenue.Zone
+                            </MudText>
+                            <MudText Typo="Typo.body2">
+                                <strong>Categoría:</strong> @selectedVenue.Category
+                            </MudText>
+                            <MudText Typo="Typo.body2">
+                                <strong>Dirección:</strong> @selectedVenue.Address
+                            </MudText>
+                            <MudText Typo="Typo.body2" Class="mt-2">
+                                <strong>Rating:</strong> ⭐ @selectedVenue.Score.ToString("F1") (@selectedVenue.ReviewCount reseñas)
+                            </MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                                       href="@($"venue/{selectedVenue.Id}")" FullWidth="true">
+                                Ver Detalle
+                            </MudButton>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            }
+        </MudItem>
+    </MudGrid>
+</div>
+
+@code {
+    private ElementReference mapElement;
+    private List<VenueDto> allVenues = new();
+    private List<VenueDto> filteredVenues = new();
+    private VenueDto? selectedVenue;
+    private List<string> zones = new();
+    private string? selectedZone;
+    private IJSObjectReference? module;
+    private const double HuelvaLat = 37.2574;
+    private const double HuelvaLng = -6.9501;
+
+    // Colores para las zonas
+    private Dictionary<string, string> zoneColors = new()
+    {
+        { "El Conquero", "#FF6B6B" },
+        { "San Antonio", "#4ECDC4" },
+        { "Marismas del Polvorín", "#45B7D1" },
+        { "Tres Ventanas", "#FFA07A" },
+        { "Molino de la Vega", "#98D8C8" },
+        { "Las Colonias", "#F7DC6F" },
+        { "Isla Chica", "#BB8FCE" },
+        { "Centro", "#85C1E2" },
+        { "Pescadería", "#F8B88B" },
+        { "Reina Victoria, Matadero", "#A9DFBF" },
+        { "Las Torres, Guadalupe", "#F5B7B1" },
+        { "Fuentepiña", "#D7BDE2" },
+        { "La Florida, Vistalegre", "#A3E4D7" },
+        { "La Hispanidad, Verdeluz", "#F9E79F" },
+        { "El Carmen, Cardeñas", "#FADBD8" },
+        { "La Orden", "#D5F4E6" },
+        { "Nuevo Parque, Los Rosales, Tráfico Pesado", "#EBDEF0" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVenues();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                // Esperar un poco para asegurar que el DOM está listo
+                await Task.Delay(100);
+
+                module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/leaflet-map.js");
+                
+                if (allVenues.Count > 0)
+                {
+                    var venues = allVenues.Select(v => new
+                    {
+                        id = v.Id,
+                        name = v.Name,
+                        zone = v.Zone,
+                        latitude = v.Latitude,
+                        longitude = v.Longitude,
+                        color = zoneColors.GetValueOrDefault(v.Zone, "#808080"),
+                        score = (double)v.Score
+                    }).ToList();
+
+                    var venuesJson = JsonSerializer.Serialize(venues);
+                    await module.InvokeVoidAsync("initializeMap", HuelvaLat, HuelvaLng, venuesJson);
+                    Console.WriteLine($"✅ Mapa inicializado con {venues.Count} venues");
+                }
+                else
+                {
+                    Console.WriteLine("⚠️ No hay venues para mostrar en el mapa");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error inicializando mapa: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
+        }
+    }
+
+    private async Task LoadVenues()
+    {
+        try
+        {
+            allVenues = await Http.GetFromJsonAsync<List<VenueDto>>("api/venues?page=1&pageSize=500") ?? new();
+            zones = allVenues.Select(v => v.Zone).Distinct().OrderBy(z => z).ToList();
+            filteredVenues = new List<VenueDto>(allVenues);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando venues: {ex.Message}");
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        filteredVenues = string.IsNullOrEmpty(selectedZone)
+            ? new List<VenueDto>(allVenues)
+            : allVenues.Where(v => v.Zone == selectedZone).ToList();
+
+        // Actualizar mapa con venues filtrados
+        if (module != null && filteredVenues.Count > 0)
+        {
+            var venues = filteredVenues.Select(v => new
+            {
+                id = v.Id,
+                name = v.Name,
+                zone = v.Zone,
+                latitude = v.Latitude,
+                longitude = v.Longitude,
+                color = zoneColors.GetValueOrDefault(v.Zone, "#808080"),
+                score = (double)v.Score
+            }).ToList();
+
+            var venuesJson = JsonSerializer.Serialize(venues);
+            await module.InvokeVoidAsync("updateMapMarkers", venuesJson);
+        }
+
+        StateHasChanged();
+    }
+
+    private void SelectVenue(VenueDto venue)
+    {
+        selectedVenue = venue;
+        if (module != null)
+        {
+            module.InvokeVoidAsync("centerMapOnVenue", venue.Latitude, venue.Longitude);
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (module is not null)
+        {
+            await module.DisposeAsync();
+        }
+    }
+}
+
+<style>
+    .map-container {
+        height: calc(100vh - 100px);
+        padding: 20px;
+    }
+
+    .leaflet-map {
+        min-height: 400px;
+        height: 500px;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        background: #eaeaea;
+    }
+
+    .map-wrapper {
+        position: relative;
+        height: 500px;
+    }
+
+    .filter-panel {
+        height: 500px;
+        overflow-y: auto;
+        border-radius: 8px;
+    }
+
+    .venue-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .venue-item {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .venue-item:hover {
+        background-color: #f5f5f5;
+        transform: translateX(5px);
+    }
+
+    .selected-venue-panel {
+        border-left: 4px solid #FF6B6B;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+</style>
+
+<style media="(max-width: 600px)">
+    .map-container {
+        height: auto;
+        padding: 10px;
+    }
+
+    .leaflet-map {
+        height: 350px;
+    }
+
+    .filter-panel {
+        height: auto;
+        margin-bottom: 20px;
+    }
+</style>
