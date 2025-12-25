@@ -66,12 +66,16 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Seed database con datos de prueba
+// DESHABILITADO: Las migraciones y seeding se hacen manualmente vía endpoints
+// Para habilitar de nuevo, descomentar las líneas de abajo
+/*
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.Migrate();
     DataSeeder.SeedAsync(context).Wait();
 }
+*/
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
