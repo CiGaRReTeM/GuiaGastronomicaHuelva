@@ -26,14 +26,38 @@ chmod +x dotnet-install.sh
 
 ## Ejecutar el proyecto
 
-### 1. Restaurar dependencias
+### 1. Configurar archivos de configuración
+
+Antes de ejecutar, necesitas copiar los archivos de ejemplo:
+
+**Para la API (Backend):**
+```powershell
+cd src\GuiaGastronomica.Api
+cp appsettings.json.example appsettings.json
+cp Properties/launchSettings.json.example Properties/launchSettings.json
+```
+
+**Para el Cliente (Frontend):**
+```powershell
+cd src\GuiaGastronomica.Client
+cp Properties/launchSettings.json.example Properties/launchSettings.json
+```
+
+**IMPORTANTE**: 
+- Estos archivos están ignorados por Git para proteger secrets
+- Edita `appsettings.json` si necesitas cambiar:
+  - Cadena de conexión a la base de datos
+  - API key de Google Places (opcional para desarrollo)
+  - Nivel de logs
+
+### 2. Restaurar dependencias
 
 ```powershell
 cd C:\GuiaGastronomicaHuelva
 dotnet restore
 ```
 
-### 2. Crear la base de datos
+### 3. Crear la base de datos
 
 ```powershell
 cd src\GuiaGastronomica.Api
