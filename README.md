@@ -15,10 +15,10 @@ Plataforma web para mostrar rankings de locales gastronómicos en Huelva basados
 ## 🎯 Características principales
 
 - ✅ **Ranking justo**: algoritmo transparente basado en señales múltiples (no solo reseñas).
+- ✅ **Mapa interactivo**: rankings por zonas/barrios con Leaflet.js + OpenStreetMap.
 - 🤖 **Chatbot con IA**: interacción conversacional para captar feedback, verificar datos y actualizar rankings.
-- 🗺️ **Mapa interactivo** (roadmap): rankings por zonas/barrios con Leaflet.js + OSM.
-- 🔍 **Búsqueda y filtros**: por zona, tipo de cocina, rango de precio.
-- 📊 **Panel admin**: moderación de reseñas, gestión de denuncias.
+- ✅ **Búsqueda y filtros**: por zona, tipo de cocina, rango de precio.
+- 🟡 **Panel admin**: moderación de reseñas, gestión de denuncias (diseñado, pendiente UI).
 - 🌐 **PWA** (roadmap): instalación en móvil, notificaciones push.
 
 ---
@@ -55,26 +55,26 @@ Plataforma web para mostrar rankings de locales gastronómicos en Huelva basados
 
 ## 📖 Documentación
 
-Lee el documento de diseño completo: **[GUIDE.md](./GUIDE.md)**
-
-Incluye:
-- MVP y roadmap detallado
-- Fuentes de datos (APIs, scraping, crowdsourcing)
-- Arquitectura técnica (frontend, backend, IA)
-- Chatbot conversacional con IA (casos de uso, flujo)
-- Privacidad, legal y moderación
-- Tabla resumen de componentes gratuitos
+- **[STATUS.md](./STATUS.md)** — Estado actual del proyecto, features completadas y pendientes ⭐ *Comienza aquí*
+- **[GUIDE.md](./GUIDE.md)** — Documento de diseño completo (MVP, roadmap, arquitectura, chatbot IA)
+- **[BLAZOR-MUDBLAZOR-GUIDE.md](./BLAZOR-MUDBLAZOR-GUIDE.md)** — Guía de desarrollo para frontend
+- **[SETUP.md](./SETUP.md)** — Instrucciones de instalación y setup
+- **[README-SCRIPTS.md](./README-SCRIPTS.md)** — Guía de scripts de ejecución
 
 ---
 
 ## 🚀 Próximos pasos
 
 1. ✅ **Diseño y arquitectura definidos** — Ver [GUIDE.md](./GUIDE.md)
-2. 🔨 **Crear scaffold .NET** — API + Blazor WASM + modelos compartidos
-3. 🤖 **Prototipar chatbot** — Semantic Kernel + Ollama + RAG
-4. 📥 **Pipeline de ingestión** — OSM + scraping blogs + formulario reseñas
-5. 🧪 **Testing con datos reales** — Locales de Huelva
-6. 🌐 **Despliegue en VPS** — Docker Compose + dominio + SSL
+2. ✅ **Scaffold .NET y frontend** — API + Blazor WASM + modelos compartidos
+3. ✅ **Mapa interactivo funcional** — Leaflet.js + OpenStreetMap
+4. 🔨 **Refinamientos del mapa y página de detalle de venue** — En progreso
+5. 🟡 **Chatbot IA mejorado** — Integrar Semantic Kernel + Ollama
+6. 🟡 **Panel administrativo** — Moderación y gestión
+7. 🟡 **Background jobs y caché** — Hangfire + Redis
+8. 🟡 **Despliegue en VPS** — Docker Compose + dominio + SSL
+
+Para más detalles: **[STATUS.md](./STATUS.md)**
 
 ---
 
@@ -101,4 +101,4 @@ MIT License — Ver [LICENSE](./LICENSE)
 
 ---
 
-**Estado del proyecto**: 📝 Diseño completado — Desarrollo próximamente
+**Estado del proyecto**: ✅ **MVP funcional** — Características core completadas, mapa interactivo operativo, pendiente refinamientos y chatbot IA avanzado. Ver [STATUS.md](./STATUS.md)
