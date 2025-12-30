@@ -16,6 +16,12 @@ Thumbs.db
 .env.local
 .env.production
 
+## Configuration Files (Secrets)
+appsettings.json
+appsettings.*.json
+launchSettings.json
+secrets.json
+
 ## .NET / C# / Blazor
 # Build results
 [Dd]ebug/

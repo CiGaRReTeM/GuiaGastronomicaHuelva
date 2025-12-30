@@ -17,5 +17,8 @@
         "System": "Warning"
       }
     }
+  },
+  "GooglePlaces": {
+    "ApiKey": "YOUR_GOOGLE_PLACES_API_KEY_HERE"
   }
 }
