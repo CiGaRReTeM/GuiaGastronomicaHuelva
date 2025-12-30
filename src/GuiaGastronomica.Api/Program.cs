@@ -5,7 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel;
 using Serilog;
 
+Console.WriteLine("═══════════════════════════════════════════════════════════");
+Console.WriteLine("🚀 Iniciando Guía Gastronómica Justa API...");
+Console.WriteLine("═══════════════════════════════════════════════════════════");
+
 var builder = WebApplication.CreateBuilder(args);
+
+Console.WriteLine("✓ WebApplicationBuilder creado");
 
 // Configurar Serilog
 Log.Logger = new LoggerConfiguration()
@@ -15,25 +21,33 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+Console.WriteLine("✓ Serilog configurado");
 
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+Console.WriteLine("✓ Servicios Swagger y Controladores agregados");
+
 // Configurar DbContext con SQLite
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+Console.WriteLine("✓ DbContext SQLite configurado");
+
 // Configurar Semantic Kernel con Ollama usando el conector oficial
+// NOTA: Ollama debe estar ejecutándose en http://localhost:11434
+// Si no está disponible, descomenta esta sección después de instalar Ollama
 var kernelBuilder = Kernel.CreateBuilder();
 
-#pragma warning disable SKEXP0070
-kernelBuilder.AddOllamaChatCompletion(
-    modelId: "llama3.2:3b",
-    endpoint: new Uri("http://localhost:11434")
-);
-#pragma warning restore SKEXP0070
+// TODO: Descomentar cuando Ollama esté disponible
+// #pragma warning disable SKEXP0070
+// kernelBuilder.AddOllamaChatCompletion(
+//     modelId: "llama3.2:3b",
+//     endpoint: new Uri("http://localhost:11434")
+// );
+// #pragma warning restore SKEXP0070
 
 var kernel = kernelBuilder.Build();
 builder.Services.AddSingleton(kernel);
@@ -43,6 +57,8 @@ builder.Services.AddScoped<ChatService>();
 
 // Configurar SignalR para chatbot
 builder.Services.AddSignalR();
+
+Console.WriteLine("✓ ChatService y SignalR configurados");
 
 // Configurar CORS
 builder.Services.AddCors(options =>
@@ -56,14 +72,26 @@ builder.Services.AddCors(options =>
     });
 });
 
+Console.WriteLine("✓ CORS configurado para Blazor Client");
+
 var app = builder.Build();
 
+Console.WriteLine("✓ WebApplication construida");
+
 // Seed database con datos de prueba
-using (var scope = app.Services.CreateScope())
+try
 {
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.EnsureCreated();
-    DataSeeder.SeedAsync(context).Wait();
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        context.Database.EnsureCreated();
+        DataSeeder.SeedAsync(context).Wait();
+        Console.WriteLine("✓ Base de datos inicializada con datos de prueba");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Error al inicializar base de datos: {ex.Message}");
 }
 
 // Configure the HTTP request pipeline
@@ -87,5 +115,19 @@ app.MapHub<ChatHub>("/chathub").RequireCors("AllowBlazorClient");
 
 // Endpoint de ejemplo
 app.MapGet("/", () => "Guía Gastronómica Justa API - v1.0");
+
+// Health check endpoint
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
+Console.WriteLine("");
+Console.WriteLine("═══════════════════════════════════════════════════════════");
+Console.WriteLine("✅ API INICIADA CORRECTAMENTE");
+Console.WriteLine("═══════════════════════════════════════════════════════════");
+Console.WriteLine("📍 Endpoints:");
+Console.WriteLine("   - Principal: http://localhost:5001");
+Console.WriteLine("   - Swagger:   http://localhost:5001/swagger");
+Console.WriteLine("   - Health:    http://localhost:5001/health");
+Console.WriteLine("═══════════════════════════════════════════════════════════");
+Console.WriteLine("");
 
 app.Run();
