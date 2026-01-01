@@ -17,10 +17,12 @@ Thumbs.db
 .env.production
 
 ## Configuration Files (Secrets)
-appsettings.json
-appsettings.*.json
-launchSettings.json
+# Solo ignorar archivos con datos sensibles
+appsettings.Production.json
+appsettings.Local.json
+appsettings.Secrets.json
 secrets.json
+# launchSettings.json ya tiene .example, no ignorar el original
 
 ## .NET / C# / Blazor
 # Build results

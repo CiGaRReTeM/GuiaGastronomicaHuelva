@@ -11,6 +11,9 @@ Console.WriteLine("════════════════════�
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configurar puerto 5001 explícitamente
+builder.WebHost.UseUrls("http://localhost:5001");
+
 Console.WriteLine("✓ WebApplicationBuilder creado");
 
 // Configurar Serilog
@@ -38,16 +41,14 @@ Console.WriteLine("✓ DbContext SQLite configurado");
 
 // Configurar Semantic Kernel con Ollama usando el conector oficial
 // NOTA: Ollama debe estar ejecutándose en http://localhost:11434
-// Si no está disponible, descomenta esta sección después de instalar Ollama
 var kernelBuilder = Kernel.CreateBuilder();
 
-// TODO: Descomentar cuando Ollama esté disponible
-// #pragma warning disable SKEXP0070
-// kernelBuilder.AddOllamaChatCompletion(
-//     modelId: "llama3.2:3b",
-//     endpoint: new Uri("http://localhost:11434")
-// );
-// #pragma warning restore SKEXP0070
+#pragma warning disable SKEXP0070
+kernelBuilder.AddOllamaChatCompletion(
+    modelId: "llama3.2:3b",
+    endpoint: new Uri("http://localhost:11434")
+);
+#pragma warning restore SKEXP0070
 
 var kernel = kernelBuilder.Build();
 builder.Services.AddSingleton(kernel);
@@ -78,7 +79,9 @@ var app = builder.Build();
 
 Console.WriteLine("✓ WebApplication construida");
 
-// Seed database con datos de prueba
+// Seed database con datos de prueba (comentado - la base de datos ya tiene datos)
+// Descomentar solo si necesitas reinicializar la base de datos
+/*
 try
 {
     using (var scope = app.Services.CreateScope())
@@ -93,6 +96,7 @@ catch (Exception ex)
 {
     Console.WriteLine($"⚠️ Error al inicializar base de datos: {ex.Message}");
 }
+*/
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
